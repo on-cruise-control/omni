@@ -7,12 +7,12 @@ module Stark
     AI_LOOP_LABEL = 'ai_loop_detected'.freeze
 
     def handle_response(response)
-      return unless response_valid?(response)
-
-      if response['session_status'] == AI_LOOP_LABEL
+      if response.is_a?(Hash) && response['session_status'] == AI_LOOP_LABEL
         flag_ai_loop_detected(current_conversation)
         return
       end
+
+      return unless response_valid?(response)
 
       if response['is_spam']
         current_conversation.update!(is_spam: true)
