@@ -1185,4 +1185,38 @@ RSpec.describe Conversation do
       end
     end
   end
+
+  describe '#trigger_area_escalations_on_label_add' do
+    let(:account) { create(:account) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let(:conversation) { create(:conversation, account: account) }
+
+    before { Current.user = agent }
+
+    {
+      'sales_escalation' => { field: :sales_escalation_emails, job: SalesEscalationNotificationJob },
+      'service_escalation' => { field: :service_escalation_emails, job: ServiceEscalationNotificationJob },
+      'vehicle_parts_escalation' => { field: :vehicle_parts_escalation_emails, job: VehiclePartsEscalationNotificationJob }
+    }.each do |label, config|
+      it "enqueues #{config[:job]} when the #{label} label is added manually and emails are configured" do
+        account.update!(config[:field] => ['dept@example.com'])
+
+        expect { conversation.update!(label_list: [label]) }
+          .to have_enqueued_job(config[:job]).with(conversation.id, ['dept@example.com'], nil, nil)
+      end
+
+      it "does not enqueue #{config[:job]} when no #{config[:field]} are configured" do
+        expect { conversation.update!(label_list: [label]) }
+          .not_to have_enqueued_job(config[:job])
+      end
+    end
+
+    it 'does not fire when a real user is not present (bot flow)' do
+      account.update!(sales_escalation_emails: ['dept@example.com'])
+      Current.user = nil
+
+      expect { conversation.update!(label_list: ['sales_escalation']) }
+        .not_to have_enqueued_job(SalesEscalationNotificationJob)
+    end
+  end
 end

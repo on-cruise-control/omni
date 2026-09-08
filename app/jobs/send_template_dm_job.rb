@@ -33,6 +33,16 @@ class SendTemplateDmJob < ApplicationJob
       return
     end
 
+    # One template DM per contact per post. Comments arriving together on the same post
+    # each enqueue this job; the atomic write (Redis SET NX) lets exactly one job proceed.
+    if retry_count.zero?
+      dm_lock_key = "template_dm_job_#{contact_inbox.id}_#{contact.id}_#{post_identifier(conversation)}"
+      unless Rails.cache.write(dm_lock_key, true, expires_in: 5.minutes, unless_exist: true)
+        Rails.logger.info "⏩ Duplicate template DM skipped for contact #{contact.id} on post #{post_identifier(conversation)}"
+        return
+      end
+    end
+
     comment_text = conversation.messages.first&.content || ''
 
     lang_code = detect_comment_language(comment_text)
@@ -47,29 +57,24 @@ class SendTemplateDmJob < ApplicationJob
 
     template_message = "#{template_message},\n#{comment_reply_text}" if comment_reply_text.present?
 
-    # Only dedup the initial enqueue - retries above reuse the same job run.
-    if retry_count.zero?
-      job_key = "template_dm_job_#{contact_inbox.id}_#{contact.id}_#{comment_id}"
-
-      if Rails.cache.exist?(job_key)
-        Rails.logger.info "⏩ Duplicate template DM job skipped for contact_inbox #{contact_inbox.id}, contact #{contact.id}, comment #{comment_id}"
-        return
-      end
-
-      Rails.cache.write(job_key, true, expires_in: 5.minutes)
-    end
-
     case conversation.additional_attributes['type']
     when 'instagram_comments', 'instagram_dm'
       send_instagram_dm(contact_inbox, recipient_id, template_message, comment_id, conversation)
     when 'facebook_comments', 'facebook_dm', 'feed_comments'
-      send_facebook_dm(contact_inbox, recipient_id, template_message, comment_id)
+      send_facebook_dm(contact_inbox, recipient_id, template_message, comment_id, conversation)
     else
       Rails.logger.warn "⚠️ Unsupported type for template DM: #{conversation.additional_attributes['type']}"
     end
   end
 
   private
+
+  # Stable identifier for the post a comment belongs to: IG media id, or FB post id / permalink.
+  # Falls back to 'unknown' so DMs still dedupe per contact when the post can't be determined.
+  def post_identifier(conversation)
+    attrs = conversation.additional_attributes || {}
+    attrs['media_id'].presence || attrs['post_id'].presence || attrs['post_url'].presence || 'unknown'
+  end
 
   def channel
     Channel::FacebookPage.find_by(id: contact_inbox.inbox.channel_id)
@@ -160,7 +165,7 @@ class SendTemplateDmJob < ApplicationJob
     template_dm_conversation
   end
 
-  def send_facebook_dm(contact_inbox, _recipient_id, template_message, comment_id)
+  def send_facebook_dm(contact_inbox, _recipient_id, template_message, comment_id, comment_conversation)
     channel = contact_inbox.inbox.channel
     access_token = channel.page_access_token
     page_id = channel.page_id
@@ -181,11 +186,12 @@ class SendTemplateDmJob < ApplicationJob
     contact = contact_inbox.contact
     inbox = contact_inbox.inbox
     account = inbox.account
+    post_id = post_identifier(comment_conversation)
 
-    # Check if template DM has already been sent for this conversation
+    # Skip if a template DM has already been sent to this contact for this post
     existing_conversation = find_existing_template_facebook_dm_conversation(contact_inbox, contact, inbox, account)
-    if existing_conversation&.additional_attributes&.dig('template_dm_sent')
-      Rails.logger.info "⏩ Skipping duplicate template DM - already sent for conversation #{existing_conversation.id}"
+    if dm_already_sent_for_post?(existing_conversation, post_id)
+      Rails.logger.info "⏩ Skipping duplicate template DM - already sent to contact #{contact.id} for post #{post_id}"
       return
     end
 
@@ -219,18 +225,12 @@ class SendTemplateDmJob < ApplicationJob
 
     message.update!(source_id: response['message_id'])
 
-    # Mark template DM as sent. Reload first: creating the message above can trigger
-    # Message#schedule_follow_up_job, which reloads and updates this same conversation's
-    # additional_attributes - merging from a stale in-memory copy here would clobber that write.
-    template_dm_conversation.reload
-    template_dm_conversation.update!(
-      additional_attributes: template_dm_conversation.additional_attributes.merge('template_dm_sent' => true)
-    )
+    mark_dm_sent_for_post(template_dm_conversation, post_id)
 
     Rails.logger.info '✅ Facebook Template DM sent successfully'
   end
 
-  def send_instagram_dm(contact_inbox, _recipient_id, template_message, comment_id, _conversation)
+  def send_instagram_dm(contact_inbox, _recipient_id, template_message, comment_id, comment_conversation)
     channel = contact_inbox.inbox.channel
     access_token = channel.access_token
     page_id = channel.instagram_id
@@ -245,11 +245,12 @@ class SendTemplateDmJob < ApplicationJob
     contact = contact_inbox.contact
     inbox = contact_inbox.inbox
     account = inbox.account
+    post_id = post_identifier(comment_conversation)
 
-    # Check if template DM has already been sent for this conversation
+    # Skip if a template DM has already been sent to this contact for this post
     existing_conversation = find_existing_template_insta_dm_conversation(contact_inbox, contact, inbox, account)
-    if existing_conversation&.additional_attributes&.dig('instagram_dm_sent')
-      Rails.logger.info "⏩ Skipping duplicate template DM - already sent for conversation #{existing_conversation.id}"
+    if dm_already_sent_for_post?(existing_conversation, post_id)
+      Rails.logger.info "⏩ Skipping duplicate template DM - already sent to contact #{contact.id} for post #{post_id}"
       return
     end
 
@@ -283,15 +284,25 @@ class SendTemplateDmJob < ApplicationJob
 
     message.update!(source_id: response['message_id'])
 
-    # Mark template DM as sent. Reload first: creating the message above can trigger
-    # Message#schedule_follow_up_job, which reloads and updates this same conversation's
-    # additional_attributes - merging from a stale in-memory copy here would clobber that write.
-    template_dm_conversation.reload
-    template_dm_conversation.update!(
-      additional_attributes: template_dm_conversation.additional_attributes.merge('instagram_dm_sent' => true)
-    )
+    mark_dm_sent_for_post(template_dm_conversation, post_id)
 
     Rails.logger.info '✅ Instagram Template DM sent successfully'
+  end
+
+  # Template DM conversations track which posts they've already replied to in
+  # additional_attributes['dm_sent_post_ids'] (one entry per post).
+  def dm_already_sent_for_post?(conversation, post_id)
+    return false if conversation.nil?
+
+    Array(conversation.additional_attributes['dm_sent_post_ids']).include?(post_id)
+  end
+
+  def mark_dm_sent_for_post(conversation, post_id)
+    conversation.reload
+    sent_post_ids = Array(conversation.additional_attributes['dm_sent_post_ids']) | [post_id]
+    conversation.update!(
+      additional_attributes: conversation.additional_attributes.merge('dm_sent_post_ids' => sent_post_ids)
+    )
   end
 
   def calculate_app_secret_proof(app_secret, access_token)

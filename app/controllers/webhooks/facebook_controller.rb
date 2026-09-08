@@ -3,20 +3,18 @@ require 'httparty'
 class Webhooks::FacebookController < ActionController::API
   include MetaTokenVerifyConcern
 
-  def valid_token?(token)
-    token = ENV['FB_VERIFY_TOKEN']
+  def valid_token?(_token)
+    ENV.fetch('FB_VERIFY_TOKEN', nil)
   end
 
   def events
     Rails.logger.info('📩 [FB Webhook] Received events')
     challenge = params['hub.challenge']
-    if challenge.present?
-      render plain: challenge and return
-    end
+    render plain: challenge and return if challenge.present?
 
     begin
       handle_entries(params['entry'.freeze])
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error("❌ [FB Webhook] Unexpected error in events: #{e.message}")
     end
 
@@ -40,7 +38,7 @@ class Webhooks::FacebookController < ActionController::API
     return unless page
 
     entry['changes'.freeze].each do |changes|
-      Rails.logger.info("📌 [FB Webhook] Change detected: #{  changes.inspect}")
+      Rails.logger.info("📌 [FB Webhook] Change detected: #{changes.inspect}")
 
       next unless changes['value']['item'] == 'comment'
       next unless changes['value']['verb'] == 'add'
@@ -77,7 +75,7 @@ class Webhooks::FacebookController < ActionController::API
     from_name = from['name']
 
     if Channel::FacebookPage.exists?(page_id: from_id)
-      Rails.logger.info("ℹ️ [FB Webhook] Ignoring comment from the page itself.")
+      Rails.logger.info('ℹ️ [FB Webhook] Ignoring comment from the page itself.')
       return nil
     end
 
@@ -89,7 +87,7 @@ class Webhooks::FacebookController < ActionController::API
       },
       source_id: from_id
     ).perform
-  rescue => e
+  rescue StandardError => e
     Rails.logger.error("❌ [FB Webhook] Error in find_or_create_contact_inbox: #{e.message}")
     nil
   end
@@ -133,17 +131,18 @@ class Webhooks::FacebookController < ActionController::API
     conversation.update!(
       additional_attributes: conversation.additional_attributes.merge(
         'comment_id' => comment_id,
+        'post_id' => changes.dig('value', 'post_id'),
         'post_url' => changes.dig('value', 'post', 'permalink_url')
       ).compact
     )
 
     conversation
-  rescue => e
+  rescue StandardError => e
     Rails.logger.error("❌ [FB Webhook] Error creating conversation: #{e.message}")
     nil
   end
 
-  def create_message(changes, page, contact_inbox, conversation, page_id)
+  def create_message(changes, page, contact_inbox, conversation, _page_id)
     comment_id = changes['value']['comment_id']
 
     return if Message.exists?(source_id: comment_id)
@@ -160,14 +159,13 @@ class Webhooks::FacebookController < ActionController::API
 
     Rails.logger.info("✅ [FB Webhook] Message created successfully for comment_id: #{comment_id}")
 
-
     SendCommentReplyJob.set(wait: 5.seconds).perform_later(contact_inbox.id, conversation)
-    SendTemplateDmJob.set(wait: 10.seconds).perform_later(contact_inbox.id, conversation,comment_id)
-  rescue => e
+    SendTemplateDmJob.set(wait: 10.seconds).perform_later(contact_inbox.id, conversation, comment_id)
+  rescue StandardError => e
     Rails.logger.error("❌ [FB Webhook] Error creating message: #{e.message}")
   end
 
-  def enqueue_comment_reply_job(contact_inbox_id, conversation)
+  def enqueue_comment_reply_job(_contact_inbox_id, conversation)
     job_cache_key = "fb_reply_job_#{conversation.id}"
     return if Rails.cache.exist?(job_cache_key)
 

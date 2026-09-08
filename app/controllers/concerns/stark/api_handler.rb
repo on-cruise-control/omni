@@ -167,7 +167,8 @@ module Stark
         'attachments' => data['attachments'] || [],
         'metadata' => data['metadata'] || {},
         'is_spam' => data['is_spam'],
-        'is_booking_created' => data['is_booking_created']
+        'is_booking_created' => data['is_booking_created'],
+        'session_status' => data['session_status']
       }
     end
 

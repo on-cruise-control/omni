@@ -20,6 +20,7 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
     # Don't process messages on spam conversations
     return false if current_conversation.is_spam
     return false if current_conversation.is_blacklisted
+    return false if current_conversation.additional_attributes&.dig('session_status') == Stark::MessageHandler::AI_LOOP_LABEL
 
     # Primary check: if conversation is assigned, don't process regardless of status
     return false if current_conversation.assignee_id.present?
