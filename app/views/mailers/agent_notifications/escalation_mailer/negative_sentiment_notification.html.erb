@@ -1,71 +1,73 @@
-<div style="font-family:'Outfit','Inter',-apple-system,system-ui,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Tahoma,Arial,sans-serif; color: #333; max-width: 600px; line-height: 1.5;">
-  <p>Hello,</p>
+<tr>
+  <td style="font-family:'Outfit','Inter',-apple-system,system-ui,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Tahoma,Arial,sans-serif; color:#333333; line-height:1.5;">
 
-  <p style="margin-bottom: 20px;">We would like to bring to your immediate attention a recent customer comment that has been identified as negative in sentiment and requires prompt follow-up.</p>
+    <p style="margin:0 0 16px;">Hello,</p>
 
-  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
-    <% if @dealership_name.present?%>
-        <tr>
-          <td style="padding:5px 0;"><strong>Dealership Name:</strong> <%= @dealership_name %></td>
-        </tr>
-        <% end %>
-    <% if @customer_name.present? && @customer_name != "(N/A)" %>
-    <tr>
-      <td style="padding: 5px 0;"><strong>Name:</strong> <%= @customer_name %></td>
-    </tr>
+    <p style="margin:0 0 20px;">We would like to bring to your immediate attention a recent customer comment that has been identified as negative in sentiment and requires prompt follow-up.</p>
+
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:20px;">
+      <% if @dealership_name.present? %>
+      <tr>
+        <td style="padding:5px 0;"><strong>Dealership Name:</strong> <%= @dealership_name %></td>
+      </tr>
+      <% end %>
+      <% if @customer_name.present? && @customer_name != "(N/A)" %>
+      <tr>
+        <td style="padding:5px 0;"><strong>Name:</strong> <%= @customer_name %></td>
+      </tr>
+      <% end %>
+      <% if (@customer_phone.present? && @customer_phone != "(N/A)") || (@customer_email.present? && @customer_email != "(N/A)") %>
+      <tr>
+        <td style="padding:5px 0;"><strong>Contact:</strong> <%= [@customer_phone, @customer_email].compact_blank.join(' / ') %></td>
+      </tr>
+      <% end %>
+      <tr>
+        <td style="padding:5px 0;"><strong>Platform:</strong> <%= @platform_name %> <strong>(comment)</strong></td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 6px;"><strong>Reason for Escalation:</strong></p>
+    <div style="background-color:#f3f4f6; padding:15px; border-radius:6px; margin-bottom:20px; line-height:1.5;">
+      <% if @comment.present? %>
+        <%= simple_format(@comment) %>
+      <% else %>
+        No comment was provided.
+      <% end %>
+    </div>
+
+    <p style="margin:0 0 6px;"><strong>Summary:</strong></p>
+    <div style="background-color:#f3f4f6; padding:15px; border-radius:6px; margin-bottom:20px; line-height:1.5;">
+      <% if @summary.present? %>
+        <%= simple_format(@summary) %>
+      <% else %>
+        No context summary was provided.
+      <% end %>
+    </div>
+
+    <% if @post_url.present? %>
+    <p style="margin:0 0 8px;">
+      <a href="<%= @post_url %>" target="_blank" style="display:inline-block; background:#e5e7eb; color:#182933; font-size:13px; font-weight:700; padding:5px 12px; border-radius:8px; border:1px solid #d1d5db; text-transform:uppercase; text-decoration:none;">
+        View Post
+      </a>
+    </p>
     <% end %>
-    <% if (@customer_phone.present? && @customer_phone != "(N/A)") || (@customer_email.present? && @customer_email != "(N/A)") %>
-    <tr>
-      <td style="padding: 5px 0;"><strong>Contact:</strong> <%= [@customer_phone, @customer_email].compact_blank.join(' / ') %></td>
-    </tr>
-    <% end %>
-    <tr>
-      <td style="padding: 5px 0;"><strong>Platform:</strong> <%= @platform_name %> <strong>(comment)</strong></td>
-    </tr>
-  </table>
 
- <p><strong>Reason for Escalation:</strong></p>
- <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-bottom: 20px; line-height: 1.5;">
-    <% if @comment.present? %>
-      <%= @comment %>
-    <% else %>
-      No comment was provided.
-    <% end %>
-  </div>
-  
-  <p><strong>Summary:</strong></p>
-  <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-bottom: 20px; line-height: 1.5;">
-    <% if @summary.present? %>
-      <%= simple_format(@summary) %>
-    <% else %>
-      No context summary was provided.
-    <% end %>
-  </div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:30px; padding-top:16px;">
+      <tr>
+        <td valign="middle">
+          <a href="<%= @action_url %>" style="display:inline-block; padding:11px 24px; background-color:#182933; color:#ffffff; font-size:14px; font-weight:500; text-decoration:none; border-radius:6px; white-space:nowrap;">
+            View Conversation
+          </a>
+        </td>
+        <td align="right" valign="middle">
+          <span style="display:inline-block; background:#fee2e2; color:#cd1c1c; font-size:13px; font-weight:700; padding:5px 12px; border-radius:30px; border:1px solid #fca5a5; text-transform:uppercase; white-space:nowrap;">
+            Escalation
+          </span>
+        </td>
+      </tr>
+    </table>
 
-  <% if @post_url.present? %>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 8px;">
-    <tr>
-      <td style="vertical-align:middle;">
-        <a href="<%= @post_url %>" target="_blank" style="display:inline-block; background:#e5e7eb; color:#182933; font-size:13px; font-weight:700; padding:5px 12px; border-radius:8px; border:1px solid #d1d5db; text-transform:uppercase; text-decoration:none;">
-          View Post
-        </a>
-      </td>
-    </tr>
-  </table>
-  <% end %>
+    <%= unsubscribe_link %>
 
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px; padding-top: 16px;">
-    <tr>
-      <td style="vertical-align:middle;">
-        <a href="<%= @action_url %>" style="display:inline-block; padding:11px 24px; background-color:#182933; color:#ffffff; font-size:14px; font-weight:500; text-decoration:none; border-radius:6px;">
-          View Conversation
-        </a>
-      </td>
-      <td align="right" style="vertical-align:middle;">
-        <span style="background:#fee2e2; color:#cd1c1c; font-size:13px; font-weight:700; padding:5px 12px; border-radius:30px; border:1px solid #fca5a5; text-transform:uppercase;">
-          Escalation
-        </span>
-      </td>
-    </tr>
-  </table>
-</div>
+  </td>
+</tr>

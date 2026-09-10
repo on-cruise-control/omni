@@ -8,6 +8,7 @@ class AgentNotifications::VehiclePartsEscalationMailer < ApplicationMailer
     ensure_current_account(@account)
 
     recipients = @account.suspended? ? super_admin_emails(@account) : emails
+    recipients = exclude_unsubscribed(recipients, @account)
 
     return if recipients.blank? && default_bcc_emails.blank?
 
@@ -18,8 +19,9 @@ class AgentNotifications::VehiclePartsEscalationMailer < ApplicationMailer
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
 
-    subject = '[Vehicle Parts Escalation] 🚨 Urgent Parts Escalation: Customer Experience Issue – Immediate Attention Required'
+    subject = '[Vehicle Parts Escalation] 🚨 Customer request needs attention'
 
+    add_unsubscribe_headers!
     mail(to: recipients, subject: subject, bcc: default_bcc_emails.presence)
   end
 
