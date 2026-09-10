@@ -9,6 +9,7 @@ class AgentNotifications::TeamReachedOutMailer < ApplicationMailer
                  else
                    emails
                  end
+    recipients = exclude_unsubscribed(recipients, @account)
 
     return if recipients.blank? && default_bcc_emails.blank?
 
@@ -20,7 +21,8 @@ class AgentNotifications::TeamReachedOutMailer < ApplicationMailer
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
 
-    mail(to: recipients, subject: '⚠️ Follow-Up Required: Team Has Not Reached Out to Customer', bcc: default_bcc_emails.presence)
+    add_unsubscribe_headers!
+    mail(to: recipients, subject: '⚠️ Follow-up needed: Customer has not been contacted', bcc: default_bcc_emails.presence)
   end
 
   private

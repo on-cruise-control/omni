@@ -13,6 +13,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
                  else
                    emails
                  end
+    recipients = exclude_unsubscribed(recipients, @account)
 
     return if recipients.blank? && default_bcc_emails.blank?
 
@@ -23,8 +24,9 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
 
-    subject = '[Escalation] 🚨 Urgent Escalation: Customer Experience Issue – Immediate Attention Required'
+    subject = '[Escalation] 🚨 Conversation requires attention'
 
+    add_unsubscribe_headers!
     mail(to: recipients, subject: subject, bcc: default_bcc_emails.presence)
   end
 
@@ -45,6 +47,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
                  else
                    emails
                  end
+    recipients = exclude_unsubscribed(recipients, @account)
 
     return if recipients.blank? && default_bcc_emails.blank?
 
@@ -56,8 +59,9 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     @action_url = conversation_url(@conversation)
     @post_url = @conversation.additional_attributes['post_url']
 
-    subject = '[Escalation] Negative Comment Detected – High-Priority Follow-Up Required'
+    subject = '[Escalation] Customer comment needs attention'
 
+    add_unsubscribe_headers!
     mail(to: recipients, subject: subject, bcc: default_bcc_emails.presence)
   end
 

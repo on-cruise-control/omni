@@ -5,15 +5,19 @@ class AdministratorNotifications::ConversationHandoffMailer < AdministratorNotif
     @conversation   = conversation
     @account        = conversation.account
     @action_url     = conversation_url(@conversation)
-    @instagram_profile_url = instagram_profile_url(@conversation)
+    @instagram_profile_url =  (@conversation)
     @customer_data = customer_data || {}
     ensure_current_account(@account)
 
-    subject = '[Parts] High-priority conversation requires attention'
+    subject = '[Parts] Customer request needs attention'
 
+    recipients = @account.suspended? ? super_admin_emails(@account) : to
+    recipients = exclude_unsubscribed(recipients, @account) if recipients.present?
+
+    add_unsubscribe_headers!
     send_notification(
       subject,
-      to: @account.suspended? ? super_admin_emails(@account) : to,
+      to: recipients,
       action_url: @action_url,
       bcc: default_bcc_emails.presence,
       meta: {

@@ -440,6 +440,14 @@
   type: secret
 # ------- End of PostHog Config ------- #
 
+# ------- Postmark Config ------- #
+- name: POSTMARK_WEBHOOK_SECRET
+  display_title: 'Postmark Webhook Secret'
+  description: 'Shared secret used to verify inbound Postmark webhook requests (sent as the Postmark-Webhook-Secret header)'
+  locked: false
+  type: secret
+# ------- End of Postmark Config ------- #
+
 # ------- Instagram Channel Related Config ------- #
 - name: INSTAGRAM_APP_ID
   display_title: 'Instagram App ID'

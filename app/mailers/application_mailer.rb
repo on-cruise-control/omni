@@ -14,6 +14,22 @@ class ApplicationMailer < ActionMailer::Base
     def global_config
       @global_config ||= GlobalConfig.get('BRAND_NAME', 'BRAND_URL', 'FRONTEND_URL')
     end
+
+    def unsubscribe_link
+      ApplicationMailer::UNSUBSCRIBE_LINK_HTML.html_safe # rubocop:disable Rails/OutputSafety
+    end
+  end
+
+  UNSUBSCRIBE_LINK_HTML = (
+    '<p style="margin:0; font-size:12px; color:#94a3b8;">' \
+      '<a href="{{{ pm:unsubscribe }}}" style="color:#94a3b8; text-decoration:underline;">' \
+      'Unsubscribe from these emails</a></p>'
+  ).freeze
+
+  module LiquidFilters
+    def unsubscribe_link(_input = nil)
+      ApplicationMailer::UNSUBSCRIBE_LINK_HTML
+    end
   end
 
   rescue_from(*ExceptionList::SMTP_EXCEPTIONS, with: :handle_smtp_exceptions)
@@ -87,6 +103,10 @@ class ApplicationMailer < ActionMailer::Base
     locals
   end
 
+  def liquid_filters
+    [LiquidFilters]
+  end
+
   def locale_from_account(account)
     return unless account
 
@@ -112,5 +132,14 @@ class ApplicationMailer < ActionMailer::Base
     return [] unless account
 
     account.users.where(type: 'SuperAdmin').pluck(:email).compact
+  end
+
+  def add_unsubscribe_headers!
+    headers['Message-Stream'] = 'outbound'
+    headers['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
+  end
+
+  def exclude_unsubscribed(emails, account)
+    Array(emails) - Array(account&.unsubscribed_emails)
   end
 end

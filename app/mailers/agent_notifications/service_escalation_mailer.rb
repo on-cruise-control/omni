@@ -8,6 +8,7 @@ class AgentNotifications::ServiceEscalationMailer < ApplicationMailer
     ensure_current_account(@account)
 
     recipients = @account.suspended? ? super_admin_emails(@account) : emails
+    recipients = exclude_unsubscribed(recipients, @account)
 
     return if recipients.blank? && default_bcc_emails.blank?
 
@@ -18,8 +19,9 @@ class AgentNotifications::ServiceEscalationMailer < ApplicationMailer
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
 
-    subject = '[Service Escalation] 🚨 Urgent Service Escalation: Customer Experience Issue – Immediate Attention Required'
+    subject = '[Service Escalation] 🚨 Service conversation needs attention'
 
+    add_unsubscribe_headers!
     mail(to: recipients, subject: subject, bcc: default_bcc_emails.presence)
   end
 

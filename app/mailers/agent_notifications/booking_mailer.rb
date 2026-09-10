@@ -23,6 +23,7 @@ class AgentNotifications::BookingMailer < ApplicationMailer
                  else
                    emails
                  end
+    recipients = exclude_unsubscribed(recipients, @account)
 
     return if recipients.blank? && default_bcc_emails.blank?
 
@@ -40,6 +41,7 @@ class AgentNotifications::BookingMailer < ApplicationMailer
     @ad_title = ad_title
     subject = '[Sales] New booking scheduled 📆'
 
+    add_unsubscribe_headers!
     mail(to: recipients, subject: subject, bcc: default_bcc_emails.presence)
   end
 end
