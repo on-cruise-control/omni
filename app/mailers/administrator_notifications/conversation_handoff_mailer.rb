@@ -5,7 +5,7 @@ class AdministratorNotifications::ConversationHandoffMailer < AdministratorNotif
     @conversation   = conversation
     @account        = conversation.account
     @action_url     = conversation_url(@conversation)
-    @instagram_profile_url =  (@conversation)
+    @instagram_profile_url = instagram_profile_url(@conversation)
     @customer_data = customer_data || {}
     ensure_current_account(@account)
 
