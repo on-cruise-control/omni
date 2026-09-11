@@ -78,8 +78,15 @@ export default {
       return type;
     },
     agentName() {
-      if (this.useInboxAvatarForBot) {
-        return this.channelConfig.avatarName || this.channelConfig.websiteName;
+      if (
+        this.useInboxAvatarForBot &&
+        this.message.sender?.type === 'agent_bot'
+      ) {
+        return (
+          this.channelConfig.botName ||
+          this.channelConfig.avatarName ||
+          this.channelConfig.websiteName
+        );
       }
 
       if (this.message.sender?.name) {
