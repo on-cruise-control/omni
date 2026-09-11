@@ -19,6 +19,10 @@ class AccountPolicy < ApplicationPolicy
     true
   end
 
+  def avatar?
+    @account_user.administrator?
+  end
+
   def subscription?
     @account_user.administrator?
   end

@@ -16,6 +16,10 @@ class AccountAPI extends ApiClient {
     );
     return response.data.cache_keys;
   }
+
+  deleteAvatar() {
+    return axios.delete(`${this.baseUrl()}/avatar`);
+  }
 }
 
 export default new AccountAPI();

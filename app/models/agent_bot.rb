@@ -46,11 +46,11 @@ class AgentBot < ApplicationRecord
     name
   end
 
-  def push_event_data(inbox = nil)
+  def push_event_data(inbox = nil, account: nil)
     {
       id: id,
-      name: name,
-      avatar_url: avatar_url || inbox&.avatar_url,
+      name: account&.bot_name.presence || name,
+      avatar_url: account&.avatar_url.presence || avatar_url || inbox&.avatar_url,
       type: 'agent_bot'
     }
   end

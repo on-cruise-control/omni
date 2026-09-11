@@ -24,6 +24,8 @@ if resource.custom_attributes.present?
   end
 end
 json.domain @account.domain
+json.bot_name @account.bot_name
+json.avatar_url @account.avatar_url
 json.features @account.enabled_features
 json.id @account.id
 json.locale @account.locale

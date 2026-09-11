@@ -76,6 +76,7 @@ module Stark
         customer_id: conversation.contact&.id,
         customer_name: extract_customer_name(conversation.contact, conversation.inbox.platform_name),
         platform: conversation.inbox.platform_name,
+        agent_name: conversation.account&.bot_display_name,
         recent_messages: format_recent_messages(conversation, exclude_message: message)
       }
     end

@@ -196,7 +196,7 @@ class Message < ApplicationRecord
 
   def merge_sender_attributes(data)
     data[:sender] = sender.push_event_data if sender && !sender.is_a?(AgentBot)
-    data[:sender] = sender.push_event_data(inbox) if sender.is_a?(AgentBot)
+    data[:sender] = sender.push_event_data(inbox, account: conversation&.account) if sender.is_a?(AgentBot)
     data
   end
 

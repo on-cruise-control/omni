@@ -92,6 +92,16 @@
         "PLACEHOLDER": "Your company's support email",
         "ERROR": ""
       },
+      "BOT_NAME": {
+        "LABEL": "Bot name",
+        "PLACEHOLDER": "Stark",
+        "HELP": "This is the name your AI bot will use to introduce itself in conversations."
+      },
+      "BOT_AVATAR": {
+        "LABEL": "Bot avatar",
+        "DELETE_SUCCESS": "Bot avatar deleted successfully",
+        "DELETE_FAILED": "Could not delete bot avatar, try again!"
+      },
       "AUTO_RESOLVE_IGNORE_WAITING": {
         "LABEL": "Exclude unattended conversations",
         "HELP": "When enabled, the system will skip resolving conversations that are still waiting for an agent's reply."
