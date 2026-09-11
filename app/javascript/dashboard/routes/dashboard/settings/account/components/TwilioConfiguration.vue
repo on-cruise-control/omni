@@ -46,12 +46,11 @@ const validations = {
   },
 };
 
-const v$ = useVuelidate(validations, formState);
+const v$ = useVuelidate(validations, formState, { $scope: false });
 
 const onPhoneNumberKeydown = event => {
   const { key, ctrlKey, metaKey } = event;
-  const isControlKey =
-    key.length > 1 || ctrlKey || metaKey; // Backspace, Tab, arrows, copy/paste shortcuts, etc.
+  const isControlKey = key.length > 1 || ctrlKey || metaKey; // Backspace, Tab, arrows, copy/paste shortcuts, etc.
   if (isControlKey) return;
 
   const isPlusAtStart = key === '+' && formState.phoneNumber.length === 0;
@@ -153,7 +152,9 @@ onMounted(() => {
     <form v-if="!isLoading" class="grid gap-4" @submit.prevent="handleSubmit">
       <WithLabel
         name="twilio-account-sid"
-        :label="t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.ACCOUNT_SID.LABEL')"
+        :label="
+          t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.ACCOUNT_SID.LABEL')
+        "
         :has-error="v$.accountSid.$error"
         :error-message="
           t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.ACCOUNT_SID.ERROR')
@@ -164,7 +165,9 @@ onMounted(() => {
           type="text"
           class="w-full"
           :placeholder="
-            t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.ACCOUNT_SID.PLACEHOLDER')
+            t(
+              'GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.ACCOUNT_SID.PLACEHOLDER'
+            )
           "
           @blur="v$.accountSid.$touch"
         />
@@ -172,7 +175,9 @@ onMounted(() => {
 
       <WithLabel
         name="twilio-auth-token"
-        :label="t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.AUTH_TOKEN.LABEL')"
+        :label="
+          t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.AUTH_TOKEN.LABEL')
+        "
         :has-error="v$.authToken.$error"
         :error-message="
           t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.AUTH_TOKEN.ERROR')
@@ -183,7 +188,9 @@ onMounted(() => {
           type="text"
           class="w-full"
           :placeholder="
-            t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.AUTH_TOKEN.PLACEHOLDER')
+            t(
+              'GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.AUTH_TOKEN.PLACEHOLDER'
+            )
           "
           @blur="v$.authToken.$touch"
         />
@@ -207,7 +214,9 @@ onMounted(() => {
           type="tel"
           class="w-full"
           :placeholder="
-            t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.PHONE_NUMBER.PLACEHOLDER')
+            t(
+              'GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.PHONE_NUMBER.PLACEHOLDER'
+            )
           "
           @keydown="onPhoneNumberKeydown"
           @input="onPhoneNumberInput"
@@ -236,9 +245,17 @@ onMounted(() => {
 
   <ConfirmationModal
     ref="confirmDialogRef"
-    :title="t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.DELETE.CONFIRM_TITLE')"
-    :description="t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.DELETE.CONFIRM')"
-    :confirm-label="t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.DELETE.BUTTON')"
-    :cancel-label="t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.DELETE.CANCEL')"
+    :title="
+      t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.DELETE.CONFIRM_TITLE')
+    "
+    :description="
+      t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.DELETE.CONFIRM')
+    "
+    :confirm-label="
+      t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.DELETE.BUTTON')
+    "
+    :cancel-label="
+      t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.DELETE.CANCEL')
+    "
   />
 </template>

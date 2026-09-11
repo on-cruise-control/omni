@@ -6,4 +6,6 @@ json.content_attributes resource.content_attributes
 json.created_at resource.created_at.to_i
 json.conversation_id resource.conversation.display_id
 json.attachments resource.attachments.map(&:push_event_data) if resource.attachments.present?
-json.sender resource.sender.push_event_data if resource.sender
+if resource.sender
+  json.sender resource.sender.is_a?(AgentBot) ? resource.sender.push_event_data(account: resource.conversation&.account) : resource.sender.push_event_data
+end

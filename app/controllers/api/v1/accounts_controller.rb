@@ -57,7 +57,9 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def update
-    @account.assign_attributes(account_params.slice(:name, :locale, :domain, :support_email, :auto_resolve_duration, :dealership_id))
+    @account.assign_attributes(
+      account_params.slice(:name, :locale, :domain, :support_email, :auto_resolve_duration, :dealership_id, :bot_name, :avatar)
+    )
     @account.custom_attributes.merge!(custom_attributes_params)
     @account.settings.merge!(settings_params)
     @account.custom_attributes['onboarding_step'] = 'invite_team' if @account.custom_attributes['onboarding_step'] == 'account_update'
@@ -71,11 +73,18 @@ class Api::V1::AccountsController < Api::BaseController
     @account.vehicle_parts_escalation_emails = params[:vehicle_parts_escalation_emails] if params.key?(:vehicle_parts_escalation_emails)
 
     @account.save!
+    process_bot_avatar_from_url
   end
 
   def update_active_at
     @current_account_user.record_session_activity!
     head :ok
+  end
+
+  def avatar
+    @account.avatar.attachment.destroy! if @account.avatar.attached?
+    @account.reload
+    # @account.avatar.purge if @account.avatar.attached?
   end
 
   private
@@ -126,7 +135,12 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def account_params
-    params.permit(:account_name, :email, :name, :password, :locale, :domain, :support_email, :auto_resolve_duration, :user_full_name, :dealership_id)
+    params.permit(:account_name, :email, :name, :password, :locale, :domain, :support_email, :auto_resolve_duration, :user_full_name,
+                  :dealership_id, :bot_name, :avatar, :avatar_url)
+  end
+
+  def process_bot_avatar_from_url
+    ::Avatar::AvatarFromUrlJob.perform_later(@account, account_params[:avatar_url]) if account_params[:avatar_url].present?
   end
 
   def custom_attributes_params

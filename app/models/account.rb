@@ -38,6 +38,9 @@ class Account < ApplicationRecord
   include CaptainFeaturable
   include AccountEmailRateLimitable
   include AccountSettingsSchema
+  include Avatarable
+
+  DEFAULT_BOT_NAME = 'Stark'.freeze
 
   SETTINGS_PARAMS_SCHEMA = {
     'type': 'object',
@@ -213,6 +216,10 @@ class Account < ApplicationRecord
 
   def service_emails
     super || []
+  end
+
+  def bot_display_name
+    bot_name.presence || DEFAULT_BOT_NAME
   end
 
   def onboarding_step
