@@ -65,15 +65,12 @@ export default {
     },
     name() {
       this.trackInteraction();
-      this.trackInput();
     },
     phoneNumber() {
       this.trackInteraction();
-      this.trackInput();
     },
     message() {
       this.trackInteraction();
-      this.trackInput();
     },
   },
   mounted() {
@@ -145,19 +142,13 @@ export default {
     },
     trackInteraction() {
       if (!this.hasTrackedInteraction && (this.phoneNumber || this.message)) {
-        trackEvent('phone_number_form_interaction');
+        trackEvent('asc_comm_engagement', {
+          event_action: 'sms_form_started',
+          comm_type: 'sms',
+          comm_status: 'start',
+        });
         this.hasTrackedInteraction = true;
       }
-    },
-    trackInput() {
-      if (this.inputTimeout) {
-        clearTimeout(this.inputTimeout);
-      }
-      this.inputTimeout = setTimeout(() => {
-        if (this.phoneNumber || this.message) {
-          trackEvent('phone_number_form_input');
-        }
-      }, 500);
     },
   },
 };

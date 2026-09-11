@@ -136,7 +136,12 @@ export default {
     },
     handleTextUsClick() {
       // Navigate to SMS form
-      trackEvent('text_us_button_click');
+      trackEvent('asc_comm_engagement', {
+        event_action: 'text_us_clicked',
+        comm_type: 'sms',
+        comm_status: 'start',
+        element_text: 'Text Us',
+      });
       this.replaceRoute('sms-form');
     },
   },

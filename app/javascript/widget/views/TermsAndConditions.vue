@@ -129,7 +129,13 @@ export default {
           timestamp: Date.now(),
         };
         LocalStorage.set(SMS_STORAGE_KEY, smsState);
-        trackEvent('phone_number_form_completed');
+        trackEvent('asc_comm_submission', {
+          event_action: 'sms_form_submitted',
+          comm_type: 'sms',
+          comm_outcome: 'crm_update',
+          form_name: 'text_us',
+          form_type: 'consumer_contact',
+        });
       } catch (error) {
         this.isSending = false;
         this.errorMessage =

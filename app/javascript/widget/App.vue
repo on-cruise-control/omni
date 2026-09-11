@@ -23,7 +23,7 @@ import { useAvailability } from 'widget/composables/useAvailability';
 import { SDK_SET_BUBBLE_VISIBILITY } from '../shared/constants/sharedFrameEvents';
 import { emitter } from 'shared/helpers/mitt';
 import { LocalStorage } from 'shared/helpers/localStorage';
-import { loadGA, trackEvent } from 'widget/helpers/analyticsHelper';
+import { trackEvent } from 'widget/helpers/analyticsHelper';
 
 const SMS_STORAGE_KEY = 'chatwoot_sms_state';
 
@@ -94,7 +94,10 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('resize', this._appHeightHandler);
-    window.visualViewport?.removeEventListener('resize', this._appHeightHandler);
+    window.visualViewport?.removeEventListener(
+      'resize',
+      this._appHeightHandler
+    );
   },
   mounted() {
     this._appHeightHandler = () => {
@@ -119,11 +122,6 @@ export default {
       this.setAppConfig({ position: widgetPosition });
     }
     setHeader(window.authToken);
-
-    const { googleAnalyticsToken } = window.chatwootWebChannel;
-    if (googleAnalyticsToken) {
-      loadGA(googleAnalyticsToken);
-    }
 
     if (this.isIFrame) {
       this.registerListeners();
@@ -470,6 +468,12 @@ export default {
           if (window.$chatwoot) {
             window.$chatwoot.openingForSms = true;
           }
+          trackEvent('asc_comm_engagement', {
+            event_action: 'sms_text_us_clicked',
+            comm_type: 'sms',
+            comm_status: 'start',
+            element_text: 'Text Us',
+          });
           // Navigate IMMEDIATELY before opening widget to prevent home page flash
           if (this.$route.name !== 'sms-form') {
             this.$router.replace({ name: 'sms-form' });
@@ -522,8 +526,12 @@ export default {
             }
           }
 
-          if (message.isOpen) {
-            trackEvent('widget_impression');
+          if (message.isOpen && !isOpeningForSms) {
+            trackEvent('asc_comm_engagement', {
+              event_action: 'widget_opened',
+              comm_type: 'chat',
+              comm_status: 'start',
+            });
           }
           this.$store.dispatch('appConfig/toggleWidgetOpen', message.isOpen);
 

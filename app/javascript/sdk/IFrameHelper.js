@@ -52,8 +52,37 @@ const updateAuthCookie = (cookieContent, baseDomain = '') =>
     baseDomain,
   });
 
+const ASC_EVENT_OWNER = 'cruisecontrol';
+
+const pushAscEvent = (name, params = {}) => {
+  const payload = {
+    event_owner: ASC_EVENT_OWNER,
+    site_hostname: window.location.hostname,
+    page_location: window.location.href,
+    page_title: document.title,
+    ...params,
+  };
+  window.dataLayer = window.dataLayer || [];
+  let via = 'dataLayer-queue';
+  if (window.google_tag_manager) {
+    via = 'gtm-dataLayer';
+  } else if (typeof window.gtag === 'function') {
+    via = 'gtag';
+  }
+  // eslint-disable-next-line no-console
+  console.log(`Courier SDK: ASC event -> ${name} (via ${via})`, payload);
+  if (window.google_tag_manager) {
+    window.dataLayer.push({ event: name, ...payload });
+  } else if (typeof window.gtag === 'function') {
+    window.gtag('event', name, payload);
+  } else {
+    // No tag present yet; queue on dataLayer for a late-loading GTM/gtag.
+    window.dataLayer.push({ event: name, ...payload });
+  }
+};
+
 const injectGA = token => {
-  if (!token || window.gtag) return;
+  if (!token || window.gtag || window.google_tag_manager) return;
   // eslint-disable-next-line no-console
   console.log('Courier GA token found, injecting Google Analytics:G-XXXX');
   const script = document.createElement('script');
@@ -317,8 +346,7 @@ export const IFrameHelper = {
         document.addEventListener(e, IFrameHelper.setupAudioListeners, false);
       });
 
-      const gaToken =
-        message.config.channelConfig.googleAnalyticsToken;
+      const gaToken = message.config.channelConfig.googleAnalyticsToken;
       if (gaToken) {
         injectGA(gaToken);
       } else {
@@ -449,6 +477,9 @@ export const IFrameHelper = {
 
     playAudio: () => {
       window.playAudioAlert();
+    },
+    'asc-event': message => {
+      pushAscEvent(message.name, message.params);
     },
     'has-conversations': message => {
       window.$chatwoot.hasConversations = message.hasConversations || false;

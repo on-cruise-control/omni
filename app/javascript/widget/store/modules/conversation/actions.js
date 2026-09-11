@@ -15,6 +15,7 @@ import { createTemporaryMessage, getNonDeletedMessages } from './helpers';
 import { emitter } from 'shared/helpers/mitt';
 import Cookies from 'js-cookie';
 import { trackEvent } from 'widget/helpers/analyticsHelper';
+
 export const actions = {
   createConversation: async ({ commit, dispatch }, params) => {
     commit('setConversationUIFlag', { isCreating: true });
@@ -29,7 +30,11 @@ export const actions = {
         sameSite: 'Lax',
       });
       emitter.emit(ON_CONVERSATION_CREATED);
-      trackEvent('conversation_initiated');
+      trackEvent('asc_comm_engagement', {
+        event_action: 'chat_conversation_created',
+        comm_type: 'chat',
+        comm_status: 'engaged',
+      });
     } catch (error) {
       // Ignore error
     } finally {
@@ -40,15 +45,24 @@ export const actions = {
     const { content, replyTo } = params;
     const message = createTemporaryMessage({ content, replyTo });
     const { pendingCustomAttributes, pendingLabels } = conversationState;
+    const isNewConversation = !Object.keys(conversationState.conversations)
+      .length;
+
     dispatch('sendMessageWithData', {
       message,
       pendingCustomAttributes,
       pendingLabels,
+      isNewConversation,
     });
   },
   sendMessageWithData: async (
     { commit },
-    { message, pendingCustomAttributes = {}, pendingLabels = [] }
+    {
+      message,
+      pendingCustomAttributes = {},
+      pendingLabels = [],
+      isNewConversation = false,
+    }
   ) => {
     const { id, content, replyTo, meta = {} } = message;
     const hasPendingMetadata =
@@ -73,7 +87,13 @@ export const actions = {
         expires: 365,
         sameSite: 'Lax',
       });
-      trackEvent('message_sent');
+      if (isNewConversation) {
+        trackEvent('asc_comm_engagement', {
+          event_action: 'chat_conversation_created',
+          comm_type: 'chat',
+          comm_status: 'engaged',
+        });
+      }
     } catch (error) {
       commit('pushMessageToConversation', { ...message, status: 'failed' });
       commit('updateMessageMeta', {
