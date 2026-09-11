@@ -5,6 +5,7 @@ import { IFrameHelper } from 'widget/helpers/utils';
 import { shouldTriggerMessageUpdateEvent } from './IframeEventHelper';
 import { CHATWOOT_ON_MESSAGE } from '../constants/sdkEvents';
 import { emitter } from '../../shared/helpers/mitt';
+import { trackEvent } from 'widget/helpers/analyticsHelper';
 
 const isMessageInActiveConversation = (getters, message) => {
   const { conversation_id: conversationId } = message;
@@ -14,6 +15,29 @@ const isMessageInActiveConversation = (getters, message) => {
 };
 
 const WIDGET_PRESENCE_INTERVAL = 60000;
+const trackedBookingConversationIds = new Set();
+
+const isBookingCreatedMessage = message => {
+  const value = message.metadata?.is_booking_created;
+  return value === true || value === 'true';
+};
+
+const trackBookingCreated = message => {
+  if (!isBookingCreatedMessage(message)) return;
+
+  const trackingKey =
+    message.conversation_id || message.conversation?.id || message.id;
+  if (!trackingKey || trackedBookingConversationIds.has(trackingKey)) return;
+
+  trackedBookingConversationIds.add(trackingKey);
+  trackEvent('asc_comm_submission', {
+    event_action: 'booking_created',
+    comm_type: 'chat',
+    comm_outcome: 'appointment_scheduled',
+    form_name: 'booking',
+    form_type: 'appointment',
+  });
+};
 
 class ActionCableConnector extends BaseActionCableConnector {
   constructor(app, pubsubToken) {
@@ -69,6 +93,7 @@ class ActionCableConnector extends BaseActionCableConnector {
     this.app.$store
       .dispatch('conversation/addOrUpdateMessage', data)
       .then(() => emitter.emit(ON_AGENT_MESSAGE_RECEIVED));
+    trackBookingCreated(data);
 
     IFrameHelper.sendMessage({
       event: 'onEvent',
