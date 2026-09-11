@@ -64,17 +64,17 @@ const pushAscEvent = (name, params = {}) => {
   };
   window.dataLayer = window.dataLayer || [];
   let via = 'dataLayer-queue';
-  if (window.google_tag_manager) {
-    via = 'gtm-dataLayer';
-  } else if (typeof window.gtag === 'function') {
+  if (typeof window.gtag === 'function') {
     via = 'gtag';
+  } else if (window.google_tag_manager) {
+    via = 'gtm-dataLayer';
   }
   // eslint-disable-next-line no-console
   console.log(`Courier SDK: ASC event -> ${name} (via ${via})`, payload);
-  if (window.google_tag_manager) {
-    window.dataLayer.push({ event: name, ...payload });
-  } else if (typeof window.gtag === 'function') {
+  if (typeof window.gtag === 'function') {
     window.gtag('event', name, payload);
+  } else if (window.google_tag_manager) {
+    window.dataLayer.push({ event: name, ...payload });
   } else {
     // No tag present yet; queue on dataLayer for a late-loading GTM/gtag.
     window.dataLayer.push({ event: name, ...payload });
@@ -82,13 +82,13 @@ const pushAscEvent = (name, params = {}) => {
 };
 
 const injectGA = token => {
-  if (!token || window.gtag || window.google_tag_manager) return;
+  if (!token || window.gtag) return;
   // eslint-disable-next-line no-console
   console.log('Courier GA token found, injecting Google Analytics:G-XXXX');
   const script = document.createElement('script');
   script.async = true;
   script.src = `https://www.googletagmanager.com/gtag/js?id=${token}`;
-  document.head.after(script);
+  document.head.appendChild(script);
   window.dataLayer = window.dataLayer || [];
   window.gtag = function gtag() {
     // eslint-disable-next-line no-undef, prefer-rest-params
