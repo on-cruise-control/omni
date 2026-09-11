@@ -7,6 +7,7 @@
     <script>
       window.chatwootWebChannel = {
         avatarUrl: '<%= @web_widget.inbox.avatar_url %>',
+        botName: <%= @web_widget.account.bot_name.to_json.html_safe %>,
         hasAConnectedAgentBot: '<%= @web_widget.inbox.agent_bot&.name %>',
         locale: '<%= @web_widget.account.locale %>',
         websiteName: '<%= @web_widget.inbox.name %>',

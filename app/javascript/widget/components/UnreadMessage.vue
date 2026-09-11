@@ -64,7 +64,11 @@ export default {
         return availableName || name || '';
       }
       if (this.useInboxAvatarForBot) {
-        return this.channelConfig.websiteName;
+        return (
+          this.channelConfig.botName ||
+          this.channelConfig.avatarName ||
+          this.channelConfig.websiteName
+        );
       }
       return this.$t('UNREAD_VIEW.BOT');
     },

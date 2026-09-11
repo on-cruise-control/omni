@@ -84,7 +84,6 @@ class Api::V1::AccountsController < Api::BaseController
   def avatar
     @account.avatar.attachment.destroy! if @account.avatar.attached?
     @account.reload
-    # @account.avatar.purge if @account.avatar.attached?
   end
 
   private

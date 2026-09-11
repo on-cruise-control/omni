@@ -8,7 +8,14 @@ json.payload do
     json.created_at message.created_at.to_i
     json.conversation_id message.conversation.display_id
     json.attachments message.attachments.map(&:push_event_data) if message.attachments.present?
-    json.sender message.sender.push_event_data if message.sender
+    if message.sender
+      sender_data = if message.sender.is_a?(AgentBot)
+                      message.sender.push_event_data(account: message.conversation.account)
+                    else
+                      message.sender.push_event_data
+                    end
+      json.sender sender_data
+    end
   end
 end
 json.meta do

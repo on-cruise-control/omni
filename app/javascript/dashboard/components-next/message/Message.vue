@@ -148,6 +148,11 @@ const { t } = useI18n();
 const route = useRoute();
 const inboxGetter = useMapGetter('inboxes/getInbox');
 const inbox = computed(() => inboxGetter.value(props.inboxId) || {});
+const currentAccountId = useMapGetter('getCurrentAccountId');
+const accountGetter = useMapGetter('accounts/getAccount');
+const account = computed(
+  () => accountGetter.value(currentAccountId.value) || {}
+);
 const { replaceInstallationName } = useBranding();
 
 /**
@@ -478,11 +483,15 @@ const avatarInfo = computed(() => {
   const { name, type, avatarUrl, thumbnail } = sender || {};
 
   // If sender type is agent bot, use avatarUrl
-  if ([SENDER_TYPES.AGENT_BOT, SENDER_TYPES.CAPTAIN_ASSISTANT].includes(type)) {
+  if (type === SENDER_TYPES.AGENT_BOT) {
     return {
-      name: name ?? '',
-      src: avatarUrl ?? '',
+      name: account.value.bot_name || name || '',
+      src: account.value.avatar_url || avatarUrl || '',
     };
+  }
+
+  if (type === SENDER_TYPES.CAPTAIN_ASSISTANT) {
+    return { name: name ?? '', src: avatarUrl ?? '' };
   }
 
   // For all other senders, use thumbnail
@@ -568,7 +577,6 @@ provideMessageContext({
         :class="{
           'ltr:ml-8 rtl:mr-8 justify-end': orientation === ORIENTATION.RIGHT,
           'ltr:mr-8 rtl:ml-8': orientation === ORIENTATION.LEFT,
-
         }"
         @contextmenu="openContextMenu($event)"
       >
